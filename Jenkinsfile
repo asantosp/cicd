@@ -28,7 +28,6 @@ pipeline{
     }
 }
 
-
 // 1. Version working without Docker containers
 //
 //pipeline {
