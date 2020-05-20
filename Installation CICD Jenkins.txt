@@ -132,7 +132,14 @@ https://docs.microsoft.com/en-us/azure/developer/jenkins/deploy-from-github-to-a
 	
 	b) docker pull nginx; docker run -it --rm -p 80:80 nginx; docker tag nginx cicdcontainerregistry.azurecr.io/pataton; docker push cicdcontainerregistry.azurecr.io/pataton
 
-22. Give permissions to the user running jenkins to run Docker with "sudo usermod -a -G docker jenkins" (https://stackoverflow.com/questions/47854463/docker-got-permission-denied-while-trying-to-connect-to-the-docker-daemon-socke). Restart Jenkins with "service jenkins restart"
+22. Give permissions to the user running jenkins to run Docker with "sudo usermod -a -G docker jenkins" "sudo usermod -a -G docker t4m4g0tch1" (https://stackoverflow.com/questions/47854463/docker-got-permission-denied-while-trying-to-connect-to-the-docker-daemon-socke). Restart Jenkins with "service jenkins restart"
 
-	docker build --tag patatin .
-	docker run -i -t -p 80:8090 patatin:latest /bin/bash
+23. Go to Web App -> Configuration -> + New application setting and add WEBSITES_PORT 9090
+
+24. Restart the Web App!
+
+
+# NOTES: Interesting commands:
+# 
+#	docker build --tag patatin .
+#	docker run -i -t -p 80:8090 patatin:latest /bin/bash
