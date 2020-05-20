@@ -1,0 +1,140 @@
+1. Install Azure VM with Jenkins
+
+2. In the Jenkins VM, type the following commands:
+
+	sudo apt-get update
+	sudo apt-get upgrade
+	sudo apt-get install openjdk-8-jdk
+	sudo apt-get install maven
+	curl -fsSL http://get.docker.com -o get-docker.sh
+	sudo sh get-docker.sh
+	sudo usermod -aG docker t4m4g0tch1
+	sudo docker run hello-world
+	sudo apt-get install unzip
+	sudo apt-get install zip
+
+3. Go to the Jenkins website URL (e.g., http://cicdtest.eastus.cloudapp.azure.com:8080/)
+
+4. Install the following plugins in Jenkins:
+	- Maven integration
+	- Github
+	- Azure Publisher Settings Credentials Plugin
+	- Azure Credentials
+	- Azure App Service
+	- Environment Injector Plug-in
+	- SonarQube Scanner
+
+5. Open the az-cli (in the azure console) and type the following command (https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli?toc=%2Fazure%2Fazure-resource-manager%2Ftoc.json&view=azure-cli-latest):
+
+	az ad sp create-for-rbac --name ServicePrincipalName
+
+6. Copy & paste the credentials and save them for later. For example:
+
+	{
+	  "appId": "ae66cabf-9f25-41b7-96b8-7bf1e442e684",
+	  "displayName": "ServicePrincipalName",
+	  "name": "http://ServicePrincipalName",
+	  "password": "444a3eac-a608-4331-aac2-9c22793b702f",
+	  "tenant": "3a0dca62-06d1-453e-8ae7-93953d21bd1d"
+	}
+
+7. Follow the "Add service principal to Jenkins" section, and then the "Create Jenkins pipeline" in
+https://docs.microsoft.com/en-us/azure/developer/jenkins/deploy-from-github-to-azure-app-service
+
+8. Type the command "az account list" in the azure console to get the GUID "id": "0dd45ffe-bcf6-489b-b499-0e3932468ab2"
+
+9. Configure webhook in GITHUB (e.g., POST TO http://cicdtest.eastus.cloudapp.azure.com:8080/github-webhook/)
+
+10. Compile and package the project as a WAR (rather than a JAR) file in Eclipse
+
+	a) Add the following to the pom.xml in the Spring Boot app:
+	
+		...
+		<packaging>war</packaging>
+		...
+	
+	b) Create a new class in the project
+	
+		package com.example.cicdtest.rest;
+	
+		import org.springframework.boot.builder.SpringApplicationBuilder;
+		import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+		
+		public class WebInitializer extends SpringBootServletInitializer{
+			@Override
+		    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		        return application.sources(RestApplication.class);
+		    }    
+		}
+
+11. In case of error when running the project with Eclipse: https://stackoverflow.com/questions/19655184/no-compiler-is-provided-in-this-environment-perhaps-you-are-running-on-a-jre-ra
+
+12. Create Jenkinsfile and Dockerfile
+
+	a) Create a declarative pipeline in Jenkins (i.e., a Jenkinsfile in the root directory in the Spring Application):
+		pipeline{
+		    agent any
+		    
+		    stages{
+		    	stage("Unit tests"){
+		    	    steps{
+		    	    	sh 'mvn test'       	        
+		    	    }    	    
+		    	}
+		        stage("Sonarqube analysis"){
+		            steps{
+		                withSonarQubeEnv('Sonarqube Server'){
+		                	sh 'mvn sonar:sonar'                    
+			            }                
+		    	     }
+		    	 }
+		    	 stage("Package, create the image with docker, and push it to azure container"){
+			    	 steps{
+			    	     sh '''
+			    	     mvn clean package
+			    	     docker build --tag pataton .
+			    	     docker login cicdcontainerregistry.azurecr.io -u cicdcontainerregistry -p 1guXIOBoro2W/4DJvOmi1bhuvdv3bs2R
+			    	     docker tag pataton cicdcontainerregistry.azurecr.io/pataton
+			    	     docker push cicdcontainerregistry.azurecr.io/pataton
+			    	     '''
+			    	 }	    	                             
+		    	 }
+		    }
+		}
+
+	b) Create the Dockerfile. For example: 
+
+		FROM amazoncorretto:8u252
+		RUN yum install shadow-utils -y
+		RUN groupadd -r spring && useradd -r spring -g spring
+		USER spring:spring
+		ARG WAR_FILE=target/rest-0.0.1-SNAPSHOT.war
+		COPY ${WAR_FILE} ROOT.war
+		ENTRYPOINT ["java","-jar","/ROOT.war"]
+
+13. Push the code to GITHUB 
+
+14. Run manually AT LEAST ONCE the pipeline created
+
+15. Access to the application (e.g., https://cicdtestspring.azurewebsites.net)
+
+16. Download sonarqube for docker as follows (in the shell): docker run -d -p 9000:9000 sonarqube (follow https://huongdanjava.com/install-sonarqube-using-docker.html/amp)
+
+17. Configure SonarQube in Jenkins (Configure System -> Sonar: https://community.sonarsource.com/t/how-to-use-sonarqube-with-jenkins-pipeline/5684) to create a new "Server"
+
+18. For activating the quality gate, set a webhook from Sonarqube to Jenkins (https://stackoverflow.com/questions/54428685/set-a-sonarqube-webhook-in-jenkinsfile)
+
+19. Continuous integration with docker (https://docs.microsoft.com/en-us/learn/modules/deploy-run-container-app-service/)
+
+20. Create an Azure Container Registry in azure.
+
+21. Connect between the Jenkins VM and the Azure Container Registry with docker
+
+	a) docker login cicdcontainerregistry.azurecr.io -u cicdcontainerregistry -p 1guXIOBoro2W/4DJvOmi1bhuvdv3bs2R (from https://docs.microsoft.com/en-us/azure/container-registry/container-registry-authentication#service-principal)
+	
+	b) docker pull nginx; docker run -it --rm -p 80:80 nginx; docker tag nginx cicdcontainerregistry.azurecr.io/pataton; docker push cicdcontainerregistry.azurecr.io/pataton
+
+22. Give permissions to the user running jenkins to run Docker with "sudo usermod -a -G docker jenkins" (https://stackoverflow.com/questions/47854463/docker-got-permission-denied-while-trying-to-connect-to-the-docker-daemon-socke). Restart Jenkins with "service jenkins restart"
+
+	docker build --tag patatin .
+	docker run -i -t -p 80:8090 patatin:latest /bin/bash
