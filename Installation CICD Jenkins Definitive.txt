@@ -1,0 +1,88 @@
+1. Install Azure VM with Jenkins
+
+2. In the Jenkins VM, type the following commands:
+
+	sudo apt-get update
+	sudo apt-get upgrade
+	sudo apt-get install openjdk-8-jdk
+	sudo apt-get install maven
+	curl -fsSL http://get.docker.com -o get-docker.sh
+	sudo sh get-docker.sh
+	sudo usermod -a -G docker t4m4g0tch1
+	sudo usermod -a -G docker jenkins
+	sudo docker run hello-world
+	sudo apt-get install unzip
+	sudo apt-get install zip
+
+3. Go to the Jenkins website URL (e.g., http://cicdtest.eastus.cloudapp.azure.com:8080/)
+
+4. Install the following plugins in Jenkins:
+	- Maven integration
+	- Github
+	- Azure Publisher Settings Credentials Plugin
+	- Azure Credentials
+	- Azure App Service
+	- Environment Injector Plug-in
+	- SonarQube Scanner
+
+5. Create Jenkinsfile and Dockerfile in the root directory
+
+	a) Create a declarative pipeline in Jenkins (i.e., a Jenkinsfile in the root directory in the Spring Application):
+		pipeline{
+		    agent any
+		    
+		    stages{
+		    	stage("Unit tests"){
+		    	    steps{
+		    	    	sh 'mvn test'       	        
+		    	    }    	    
+		    	}
+		        stage("Sonarqube analysis"){
+		            steps{
+		                withSonarQubeEnv('Sonarqube Server'){
+		                	sh 'mvn sonar:sonar'                    
+			            }                
+		    	     }
+		    	 }
+		    	 stage("Package, create the image with docker, and push it to azure container"){
+			    	 steps{
+			    	     sh '''
+			    	     mvn clean package
+			    	     docker build --tag <pataton> .
+			    	     docker login cicdcontainerregistry.azurecr.io -u cicdcontainerregistry -p 1guXIOBoro2W/4DJvOmi1bhuvdv3bs2R
+			    	     docker tag <pataton> cicdcontainerregistry.azurecr.io/<pataton>
+			    	     docker push cicdcontainerregistry.azurecr.io/<pataton>
+			    	     '''
+			    	 }	    	                             
+		    	 }
+		    }
+		}
+
+	b) Create the Dockerfile. For example: 
+
+	FROM amazoncorretto:8
+	ARG JAR_FILE=target/cicd-0.0.1-SNAPSHOT.jar
+	COPY ${JAR_FILE} ROOT.jar
+	ENTRYPOINT ["java","-jar","/ROOT.jar"]
+
+
+6. Configure webhook in the GITHUB repository were you upload the code (e.g., POST TO http://cicdtest.eastus.cloudapp.azure.com:8080/github-webhook/), so it launches Jenkins
+
+7. Run manually AT LEAST ONCE the pipeline created! Otherwise the webhook does not work!
+
+8. Access to the application (e.g., https://cicdtestspring.azurewebsites.net)
+
+9. Create an Azure Container Registry in azure.
+
+10. Go to Web App -> Container settings -> Azure Container Registry. Turn Continuous Deployment ON, and select the registry and image (e.g., pataton) 
+
+11. Go to Web App -> Configuration -> + New application setting and add WEBSITES_PORT 9090
+
+12. Restart the Web App!
+
+13. Push the code to GITHUB 
+
+# NOTES: Interesting commands:
+# 
+#	docker build --tag patatin .
+#	docker run -i -t -p 80:8090 patatin:latest /bin/bash

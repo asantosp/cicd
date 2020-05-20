@@ -29,7 +29,6 @@ public class IndexRestController {
     }
 
     
-
     @GetMapping("/")
     public String getData(){
        try
