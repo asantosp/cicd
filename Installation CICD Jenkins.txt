@@ -104,13 +104,11 @@ https://docs.microsoft.com/en-us/azure/developer/jenkins/deploy-from-github-to-a
 
 	b) Create the Dockerfile. For example: 
 
-		FROM amazoncorretto:8u252
-		RUN yum install shadow-utils -y
-		RUN groupadd -r spring && useradd -r spring -g spring
-		USER spring:spring
-		ARG WAR_FILE=target/rest-0.0.1-SNAPSHOT.war
-		COPY ${WAR_FILE} ROOT.war
-		ENTRYPOINT ["java","-jar","/ROOT.war"]
+	FROM amazoncorretto:8
+	ARG JAR_FILE=target/cicd-0.0.1-SNAPSHOT.jar
+	COPY ${JAR_FILE} ROOT.jar
+	ENTRYPOINT ["java","-jar","/ROOT.jar"]
+
 
 13. Push the code to GITHUB 
 

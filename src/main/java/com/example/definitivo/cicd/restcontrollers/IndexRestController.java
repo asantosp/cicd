@@ -34,17 +34,6 @@ public class IndexRestController {
     public String getData(){
        try
         {
-            // URL to dummy data file
-            //String fileName=env.getProperty("file.dummy.path");
-
-            // Get the context (i.e., /java/resources...) and append fileName
-            //ClassLoader classLoader = new IndexRestController(env).getClass().getClassLoader();
-            //File file = new File(classLoader.getResource(fileName).getFile());
-
-            //Read File Content
-            //String theBody = new String(Files.readAllBytes(file.toPath()));
-
-            // Return the content in String format with OK
             return "Veamos el cambiazo junto al Jenkins guapi";
         }
         catch (Exception e)

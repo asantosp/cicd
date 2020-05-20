@@ -2,18 +2,18 @@ pipeline{
     agent any
     
     stages{
-//    	stage("Unit tests"){
-//    	    steps{
-//    	    	sh 'mvn test'       	        
-//    	    }    	    
-//    	}
-//        stage("Sonarqube analysis"){
-//            steps{
-//                withSonarQubeEnv('Sonarqube Server'){
-//                	sh 'mvn sonar:sonar'                    
-//	            }                
-//    	     }
-//    	 }
+    	stage("Unit tests"){
+    	    steps{
+    	    	sh 'mvn test'       	        
+    	    }    	    
+    	}
+        stage("Sonarqube analysis"){
+            steps{
+                withSonarQubeEnv('Sonarqube Server'){
+                	sh 'mvn sonar:sonar'                    
+	            }                
+    	     }
+    	 }
     	 stage("Package, create the image with docker, and push it to azure container"){
 	    	 steps{
 	    	     sh '''
